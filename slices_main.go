@@ -1,9 +1,6 @@
 package main
 
-import (
-	"fmt"
-)
-
+/*
 func main() {
 	fmt.Print("\n\nSuma de elementos\n")
 	n := GetNumberOfElementsForSlice()
@@ -11,3 +8,4 @@ func main() {
 
 	fmt.Printf("Suma = %v\n\n", SumOfElementsOfSlice(s))
 }
+*/
