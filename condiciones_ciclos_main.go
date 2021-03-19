@@ -1,7 +1,6 @@
 package main
 
-import "fmt"
-
+/*
 func main() {
 	// Primer programa
 	fmt.Print("\n\nSigno zodiacal\n")
@@ -15,3 +14,4 @@ func main() {
 	e := GetE()
 	fmt.Printf("Euler = %.3f\n", e)
 }
+*/
