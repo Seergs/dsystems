@@ -17,11 +17,11 @@ func TestBurbuja(t *testing.T) {
 }
 
 func TestFibonacci(t *testing.T) {
-	n := 10
+	n := 9
 
 	fib := Fibonacci(int64(n))
 
-	var expected int64 = 55
+	var expected int64 = 34
 
 	if (fib != expected) {
 		t.Fatalf("%o is not %o", fib, expected)
