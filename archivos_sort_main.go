@@ -1,9 +1,6 @@
 package main
 
-import (
-	"fmt"
-)
-
+/*
 func main() {
 	fmt.Print("Cantidad de strings: ")
 	n := getIntFromUser()
@@ -39,3 +36,4 @@ func getIntFromUser() int64 {
 
 	return op
 }
+*/
