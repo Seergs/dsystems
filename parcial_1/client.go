@@ -1,15 +1,18 @@
 package main
 
 import (
+	"bufio"
 	"encoding/gob"
 	"fmt"
 	"net"
+	"os"
 	"time"
 )
 
 type Client struct {
 	identifier string
 	messages []Message
+	port string
 }
 
 type Request struct {
@@ -26,8 +29,26 @@ type Message struct {
 
 func NewClient() *Client {
 	c := Client{identifier: ""}
+	c.getPort()
 	c.createUsername()
+	go c.start()
 	return &c
+}
+
+func (c *Client) start() {
+	client, err := net.Listen("tcp", ":50001")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	for {
+		_, err := client.Accept()
+		if err != nil {
+			fmt.Println(err)
+			continue
+		}
+		fmt.Println("Mensaje recibido desde el servidor")
+	}
 }
 
 func (c *Client) createUsername() {
@@ -37,6 +58,26 @@ func (c *Client) createUsername() {
 	for c.identifier == "" {
 		fmt.Print("Username ocupado, elige otro: ")
 		c.validateUsername(getStringFromUser())
+	}
+}
+
+func (c *Client) getPort() {
+	client, err := net.Dial("tcp", ":5000")
+	defer client.Close()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	request := Request {"getPort", Message{}, ""}
+	err = gob.NewEncoder(client).Encode(request)
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	err = gob.NewDecoder(client).Decode(&c.port)
+	if err != nil {
+		fmt.Println("Algo salio mal")
 	}
 }
 
@@ -116,14 +157,7 @@ func (c *Client) showAllMessages() {
 
 func printMessage(m Message, clientUsername string) {
 	fmt.Println()
-	if m.From == clientUsername {
-		fmt.Printf("\t\t\t")
-		fmt.Print(m.Text)
-		fmt.Println()
-		fmt.Printf("\t\tel ")
-		fmt.Print(m.Date.Format("06-Jan-02"))
-		fmt.Printf("\n")
-	} else {
+	if m.From != clientUsername {
 		fmt.Print("de ")
 		fmt.Println(m.From)
 		fmt.Println(m.Text)
@@ -135,6 +169,7 @@ func printMessage(m Message, clientUsername string) {
 
 func main() {
 	client := NewClient()
+	//client.getPort()
 	exit := false
 
 	for !exit {
@@ -142,7 +177,7 @@ func main() {
 		option := getIntFromUser()
 		if option == 1 {
 			fmt.Print("Que quieres decir?: ")
-			go client.sendTextMessage(getStringFromUser())
+			client.sendTextMessage(getStringFromUser())
 		} else if option == 2 {
 
 		} else if option == 3 {
@@ -166,12 +201,15 @@ func displayMenu() {
 	fmt.Print("Opcion: ")
 }
 
+const inputDelimiter = '\n'
 func getStringFromUser() string {
-	var line string
-
-	fmt.Scan(&line)
-
-	return line
+	s := ""
+	for s == "" {
+		scanner := bufio.NewScanner(os.Stdin)
+		scanner.Scan()
+		s = scanner.Text()
+	}
+	return s
 }
 
 func getIntFromUser() int64 {

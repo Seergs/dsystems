@@ -5,12 +5,19 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"time"
 )
 
 type Server struct {
-	Clients []string
+	Clients []Client
 	Messages []Message
+	connections map[string] string
+}
+
+type Client struct {
+	username string
+	conn net.Conn
 }
 
 type Message struct {
@@ -56,8 +63,9 @@ func (s *Server) clientHandler(c net.Conn) {
 		fmt.Println(err)
 	}
 	log.Println("Request received with action", request.Action)
-	if request.Action == "validateUsername" {
-		s.validateUsername(request.Username, c)
+	if request.Action == "getPort" {
+		s.getPort(c)
+	} else if request.Action == "validateUsername" {
 	} else if request.Action == "sendMessage" {
 		s.handleMessage(request, c)
 	} else if request.Action == "sendFile" {
@@ -71,13 +79,28 @@ func (s *Server) clientHandler(c net.Conn) {
 	}
 }
 
-func (s *Server) addClient(id string) {
-	s.Clients = append(s.Clients, id)
+func (s *Server) getPort(c net.Conn) {
+	ports := s.getPorts()
+	port := ports[len(ports) - 1]
+	err := gob.NewEncoder(c).Encode(port)
+	if err != nil {
+		log.Fatalln("Could not send port to client")
+	}
+	s.connections[port] = ""
+}
+
+func (s *Server) getPorts() []string {
+	ports := []string{}
+	for port, _ := range s.connections {
+		ports = append(ports, port)
+	}
+
+	return ports
 }
 
 func (s *Server) validateUsername(u string, c net.Conn) {
 	log.Println("Validating username", u)
-	if existsInSlice(u, s.Clients) {
+	if existsInSlice(u, s.usernames) {
 		log.Println("Username", u, "already used")
 		err := gob.NewEncoder(c).Encode(false)
 		if err != nil {
@@ -88,7 +111,6 @@ func (s *Server) validateUsername(u string, c net.Conn) {
 		if err != nil {
 			return
 		}
-		s.addClient(u)
 		log.Println("Username", u, "is not taken")
 	}
 }
@@ -97,6 +119,23 @@ func  (s *Server) handleMessage(r Request, c net.Conn,) {
 	log.Println("Received a message")
 	message := Message {r.Message.Text, r.Message.Date, r.Username}
 	s.Messages = append(s.Messages, message)
+	s.broadcastMessage(message)
+}
+
+func (s *Server) broadcastMessage(m Message) {
+	log.Println("Sending message to all clients")
+	for range s.Clients {
+		c, err := net.Dial("tcp", ":5001")
+		defer c.Close()
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		err = gob.NewEncoder(c).Encode(m)
+		if err != nil {
+			log.Fatalln("Algo salio mal enviando al cliente")
+		}
+	}
 }
 
 func (s *Server) handleFile(c net.Conn) {
@@ -137,6 +176,32 @@ func printMessage(m Message) {
 	fmt.Printf("\n\n")
 }
 
+func (s *Server) backupMessages() {
+	log.Println("Saving messages to messages.txt")
+	delimiter := "|"
+	messages := []string{}
+	for _, m :=  range s.Messages {
+		line := m.Date.String() + delimiter + m.From + delimiter + m.Text
+		messages = append(messages, line)
+	}	
+	saveToFile(messages, "messages.txt")
+}
+
+func saveToFile(strings []string, filename string) {
+	file, err := os.Create(filename)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	defer file.Close()
+
+	for _,s := range(strings) {
+		file.WriteString(s + "\n")
+	}
+}
+
+
 func main() {
 	server := NewServer()
 	fmt.Println("Servidor escuchando mensajes...")
@@ -148,11 +213,12 @@ func main() {
 		option := getIntFromUser()
 		
 		if option == 1 {
-			server.showAllMessages()
+			go server.showAllMessages()
 		} else if option == 2 {
-
+			go server.backupMessages()
 		} else if option == 3 {  
 			exit = true
+		} else if option == 4 {
 		} else {
 			fmt.Println("Opcion invalida")
 		}
