@@ -267,13 +267,10 @@ func (s *server) getClientByUsername(u string) client {
 }
 
 func (s *server) getNewPort() int {
-	log.Println("Getting new port for client")
 	port := 5001
 	for _, c := range s.members {
 		port = c.Port
 	}
-
-	log.Println("Port =", port + 1)
 	return port + 1
 }
 
