@@ -5,157 +5,256 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"os"
+	"strconv"
 	"time"
 )
 
-type Server struct {
-	Clients []Client
+const (
+	join = iota
+	username 
+	message
+	messages
+	file
+)
+
+type server struct {
+	members map[string]client
 	Messages []Message
-	connections map[string] string
 }
 
-type Client struct {
-	username string
-	conn net.Conn
+type client struct {
+	Username string
+	Port int
+}
+
+type request struct {
+	ClientId string
+	Action int
+	Username string
+	Message string
+	File File
+}
+
+type response struct {
+	Message string
+	Messages [] Message
+	File File
 }
 
 type Message struct {
+	From client
 	Text string
 	Date time.Time
-	From string
 }
 
-type Request struct {
-	Action string
-	Message Message
-	Username string
+type File struct {
+	Bytes []byte
+	Length int
+	Filename string
 }
 
-func NewServer() *Server {
-	s := Server {}
-	go s.start()
-	return &s
+func newServer() *server {
+	return &server {
+		members: make(map[string]client),
+	}
 }
 
-func (s *Server) start() {
-	server, err := net.Listen("tcp", ":5000")
+func (s *server) decode(conn net.Conn) request {
+	var req request
+	err := gob.NewDecoder(conn).Decode(&req)
 	if err != nil {
-		fmt.Println(err)
+		log.Printf("Unable to decode request: %s", err.Error())
+	}
+	return req
+}
+
+func (s *server) encode(conn net.Conn, data interface {}) {
+	err := gob.NewEncoder(conn).Encode(data)
+	if err != nil {
+		log.Printf("Unable to encode request: %s", err.Error())
+	}
+}
+
+func (s *server) run() {
+	listener, err := net.Listen("tcp", ":5000")
+	if err != nil {
+		log.Fatalf("Unable to start server: %s", err.Error())
 		return
 	}
+	defer listener.Close()
+	log.Println("Server started on port 5000")
+
 	for {
-		c, err := server.Accept()
+		c, err := listener.Accept()
 		if err != nil {
-			fmt.Println(err)
+			log.Printf("Failed to accept connection: %s", err.Error())
 			continue
 		}
 		go s.clientHandler(c)
 	}
 }
 
-func (s *Server) clientHandler(c net.Conn) {
-	defer c.Close()
-
-	var request Request
-	err := gob.NewDecoder(c).Decode(&request) 
-	if err != nil {
-		fmt.Println(err)
-	}
-	log.Println("Request received with action", request.Action)
-	if request.Action == "getPort" {
-		s.getPort(c)
-	} else if request.Action == "validateUsername" {
-	} else if request.Action == "sendMessage" {
-		s.handleMessage(request, c)
-	} else if request.Action == "sendFile" {
-		s.handleFile(c)
-	} else if request.Action == "getMessages" {
-		s.getAllMessages(request, c)
-	} else if request.Action == "disconnect" {
-		s.removeClient(c)
-	} else {
-		fmt.Println("Unhandled action")
+func (s *server) clientHandler(conn net.Conn) {
+	defer conn.Close()
+	req := s.decode(conn)
+	
+	if req.Action == join {
+		s.newClient(conn, req.ClientId)
+	} else if req.Action == username {
+		s.setupUsername(conn, req.ClientId, req.Username)
+	} else if req.Action == message {
+		s.msg(req.Username,  req.Message, conn)
+	} else if req.Action == messages {
+		s.sendAllMessagesToClient(req.Username, conn)
+	} else if req.Action == file {
+		s.file(req.Username, req.File, conn)
 	}
 }
 
-func (s *Server) getPort(c net.Conn) {
-	ports := s.getPorts()
-	port := ports[len(ports) - 1]
-	err := gob.NewEncoder(c).Encode(port)
-	if err != nil {
-		log.Fatalln("Could not send port to client")
+func (s *server) newClient(conn net.Conn, randid string) {
+	c := client{
+		Username: randid,
+		Port: s.getNewPort(),
 	}
-	s.connections[port] = ""
+	s.join(c, conn)
 }
 
-func (s *Server) getPorts() []string {
-	ports := []string{}
-	for port, _ := range s.connections {
-		ports = append(ports, port)
-	}
-
-	return ports
+func (s *server) join(c client, conn net.Conn) {
+	log.Printf("New client has joined: %s", c.Username)
+	s.members[c.Username] = c
+	s.encode(conn, response {strconv.Itoa(c.Port), []Message{}, File{}})
 }
 
-func (s *Server) validateUsername(u string, c net.Conn) {
-	log.Println("Validating username", u)
-	if existsInSlice(u, s.usernames) {
-		log.Println("Username", u, "already used")
-		err := gob.NewEncoder(c).Encode(false)
-		if err != nil {
-			return
-		}
-	} else {
-		err := gob.NewEncoder(c).Encode(true)
-		if err != nil {
-			return
-		}
-		log.Println("Username", u, "is not taken")
-	}
-}
-
-func  (s *Server) handleMessage(r Request, c net.Conn,) {
-	log.Println("Received a message")
-	message := Message {r.Message.Text, r.Message.Date, r.Username}
-	s.Messages = append(s.Messages, message)
-	s.broadcastMessage(message)
-}
-
-func (s *Server) broadcastMessage(m Message) {
-	log.Println("Sending message to all clients")
-	for range s.Clients {
-		c, err := net.Dial("tcp", ":5001")
-		defer c.Close()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-		err = gob.NewEncoder(c).Encode(m)
-		if err != nil {
-			log.Fatalln("Algo salio mal enviando al cliente")
-		}
-	}
-}
-
-func (s *Server) handleFile(c net.Conn) {
-
-}
-
-func (s *Server) getAllMessages(r Request, c net.Conn) {
-	log.Println("Sending all messages to ", r.Username)
-	err := gob.NewEncoder(c).Encode(s.Messages)
-	if err != nil {
+func (s *server) setupUsername(conn net.Conn, clientId string, newUsername string) {
+	c := s.getClientByUsername(clientId)
+	if c.Username == ""{
+		log.Fatalln("Couldn't find client with id", clientId)
 		return
 	}
-	log.Println("Messages sent")
+	s.sendUsernameValidationToClient(c, newUsername, conn)
 }
 
-func (s *Server) removeClient(c net.Conn) {
-
+func (s *server) sendUsernameValidationToClient(c client, username string, conn net.Conn){
+	usernames := s.getUsernames()
+	if existsInSlice(username, usernames) {
+		log.Printf("Username %s taken", username)
+		s.encode(conn, response {"0", []Message{}, File{}})
+	} else {
+		s.encode(conn, response {"1", []Message{}, File{}})
+		prevUsername := c.Username
+		c.Username = username
+		s.members[username] = c 
+		delete(s.members, prevUsername)
+		log.Printf("Username %s available. Current users in chat %s", username, s.getUsernames())
+	}
 }
 
-func (s *Server) showAllMessages() {
+func (s *server) msg(from string, msg string, conn net.Conn){
+	log.Println(from, ":", msg)
+	c := s.getClientByUsername(from)
+	s.saveMessage(Message {From: c, Text: msg, Date: time.Now() })
+	s.broadcastMessage(from, msg, conn)
+}
+
+func (s *server) file(from string, file File, conn net.Conn) {
+	log.Println(from, "sent", file.Filename)
+	c := s.getClientByUsername(from)
+	s.saveMessage(Message {From: c, Text: file.Filename, Date: time.Now() })
+	s.broadcastFile(from, file, conn)
+}
+
+func (s *server) broadcastMessage(from string, msg string, conn net.Conn)  {
+	clients := s.getClients()
+
+	for _, c := range clients {
+		if from != c.Username {
+			cc, err := net.Dial("tcp", ":" + strconv.Itoa(c.Port))
+			if err != nil {
+				log.Fatalln("Something went wrong broadcasting message", err.Error())
+				return
+			}
+			s.encode(cc, response {from + ": " + msg, []Message{}, File{}})
+			cc.Close()
+		}
+	}
+}
+
+func (s *server) broadcastFile(from string, file File, conn net.Conn) {
+		clients := s.getClients()
+
+	for _, c := range clients {
+		if from != c.Username {
+			cc, err := net.Dial("tcp", ":" + strconv.Itoa(c.Port))
+			if err != nil {
+				log.Fatalln("Something went wrong broadcasting message", err.Error())
+				return
+			}
+			s.encode(cc, response {from + " envio " + file.Filename, []Message{}, file})
+			cc.Close()
+		}
+	}
+}
+
+func (s *server) saveMessage(msg Message) {
+	s.Messages = append(s.Messages, msg)
+}
+
+func (s *server) sendAllMessagesToClient(username string, conn net.Conn) {
+	s.encode(conn, response{"", s.getAllMessagesForClient(username), File{}})
+}
+
+func (s *server) getAllMessagesForClient(username string) []Message {
+	messages := [] Message{}
+	for _, m := range s.Messages {
+		if m.From.Username != username {
+			messages = append(messages, m)
+		}
+	}
+	return messages
+}
+
+func (s *server) quit(c *client) {
+	
+}
+
+func (s *server) getClients() []client {
+	var clients []client
+	for _, c := range s.members {
+		clients = append(clients, c)
+	}
+	return clients
+}
+
+func (s *server) getUsernames() []string {
+	var usernames []string
+	for _, c := range s.members {
+		usernames = append(usernames, c.Username)
+	}
+	return usernames
+}
+
+func (s *server) getClientByUsername(u string) client {
+	c := client{}
+	for username, cli := range s.members {
+		if username == u {
+			c = cli
+		}
+	}
+	return c
+}
+
+func (s *server) getNewPort() int {
+	log.Println("Getting new port for client")
+	port := 5001
+	for _, c := range s.members {
+		port = c.Port
+	}
+
+	log.Println("Port =", port + 1)
+	return port + 1
+}
+
+func (s *server) displayAllMessages() {
 	fmt.Printf("\n\n\n\n\n\n\n\n")
 	fmt.Printf("------------------------\n")
 	fmt.Println("-> Todos los mensajes")
@@ -169,59 +268,28 @@ func (s *Server) showAllMessages() {
 
 func printMessage(m Message) {
 	fmt.Printf("\n\nDe ")
-	fmt.Println(m.From)
+	fmt.Println(m.From.Username)
 	fmt.Println(m.Text)
 	fmt.Printf("el ")
 	fmt.Print(m.Date.Format("06-Jan-02"))
 	fmt.Printf("\n\n")
 }
 
-func (s *Server) backupMessages() {
-	log.Println("Saving messages to messages.txt")
-	delimiter := "|"
-	messages := []string{}
-	for _, m :=  range s.Messages {
-		line := m.Date.String() + delimiter + m.From + delimiter + m.Text
-		messages = append(messages, line)
-	}	
-	saveToFile(messages, "messages.txt")
-}
-
-func saveToFile(strings []string, filename string) {
-	file, err := os.Create(filename)
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-	defer file.Close()
-
-	for _,s := range(strings) {
-		file.WriteString(s + "\n")
-	}
-}
-
 
 func main() {
-	server := NewServer()
-	fmt.Println("Servidor escuchando mensajes...")
+	s := newServer()
+	go s.run()
 
-	exit := false
-
-	for !exit {
+	killServer := false 
+	for !killServer {
 		displayMenu()
 		option := getIntFromUser()
-		
 		if option == 1 {
-			go server.showAllMessages()
-		} else if option == 2 {
-			go server.backupMessages()
-		} else if option == 3 {  
-			exit = true
-		} else if option == 4 {
-		} else {
-			fmt.Println("Opcion invalida")
+			s.displayAllMessages()
+		} else if option == 3 {
+			killServer = true
 		}
+
 	}
 }
 
