@@ -14,6 +14,7 @@ const (
 	username 
 	message
 	messages
+	file
 )
 
 type server struct {
@@ -31,17 +32,25 @@ type request struct {
 	Action int
 	Username string
 	Message string
+	File File
 }
 
 type response struct {
 	Message string
 	Messages [] Message
+	File File
 }
 
 type Message struct {
 	From client
 	Text string
 	Date time.Time
+}
+
+type File struct {
+	Bytes []byte
+	Length int
+	Filename string
 }
 
 func newServer() *server {
@@ -97,6 +106,8 @@ func (s *server) clientHandler(conn net.Conn) {
 		s.msg(req.Username,  req.Message, conn)
 	} else if req.Action == messages {
 		s.sendAllMessagesToClient(req.Username, conn)
+	} else if req.Action == file {
+		s.file(req.Username, req.File, conn)
 	}
 }
 
@@ -111,7 +122,7 @@ func (s *server) newClient(conn net.Conn, randid string) {
 func (s *server) join(c client, conn net.Conn) {
 	log.Printf("New client has joined: %s", c.Username)
 	s.members[c.Username] = c
-	s.encode(conn, response {strconv.Itoa(c.Port), []Message{}})
+	s.encode(conn, response {strconv.Itoa(c.Port), []Message{}, File{}})
 }
 
 func (s *server) setupUsername(conn net.Conn, clientId string, newUsername string) {
@@ -127,9 +138,9 @@ func (s *server) sendUsernameValidationToClient(c client, username string, conn 
 	usernames := s.getUsernames()
 	if existsInSlice(username, usernames) {
 		log.Printf("Username %s taken", username)
-		s.encode(conn, response {"0", []Message{}})
+		s.encode(conn, response {"0", []Message{}, File{}})
 	} else {
-		s.encode(conn, response {"1", []Message{}})
+		s.encode(conn, response {"1", []Message{}, File{}})
 		prevUsername := c.Username
 		c.Username = username
 		s.members[username] = c 
@@ -141,11 +152,18 @@ func (s *server) sendUsernameValidationToClient(c client, username string, conn 
 func (s *server) msg(from string, msg string, conn net.Conn){
 	log.Println(from, ":", msg)
 	c := s.getClientByUsername(from)
-	s.Messages = append(s.Messages, Message{From: c, Text: msg, Date: time.Now() })
-	s.broadcast(from, msg, conn)
+	s.saveMessage(Message {From: c, Text: msg, Date: time.Now() })
+	s.broadcastMessage(from, msg, conn)
 }
 
-func (s *server) broadcast(from string, msg string, conn net.Conn)  {
+func (s *server) file(from string, file File, conn net.Conn) {
+	log.Println(from, "sent", file.Filename)
+	c := s.getClientByUsername(from)
+	s.saveMessage(Message {From: c, Text: file.Filename, Date: time.Now() })
+	s.broadcastFile(from, file, conn)
+}
+
+func (s *server) broadcastMessage(from string, msg string, conn net.Conn)  {
 	clients := s.getClients()
 
 	for _, c := range clients {
@@ -155,14 +173,34 @@ func (s *server) broadcast(from string, msg string, conn net.Conn)  {
 				log.Fatalln("Something went wrong broadcasting message", err.Error())
 				return
 			}
-			s.encode(cc, response {from + ": " + msg, []Message{}})
+			s.encode(cc, response {from + ": " + msg, []Message{}, File{}})
 			cc.Close()
 		}
 	}
 }
 
+func (s *server) broadcastFile(from string, file File, conn net.Conn) {
+		clients := s.getClients()
+
+	for _, c := range clients {
+		if from != c.Username {
+			cc, err := net.Dial("tcp", ":" + strconv.Itoa(c.Port))
+			if err != nil {
+				log.Fatalln("Something went wrong broadcasting message", err.Error())
+				return
+			}
+			s.encode(cc, response {from + " envio " + file.Filename, []Message{}, file})
+			cc.Close()
+		}
+	}
+}
+
+func (s *server) saveMessage(msg Message) {
+	s.Messages = append(s.Messages, msg)
+}
+
 func (s *server) sendAllMessagesToClient(username string, conn net.Conn) {
-	s.encode(conn, response{"", s.getAllMessagesForClient(username)})
+	s.encode(conn, response{"", s.getAllMessagesForClient(username), File{}})
 }
 
 func (s *server) getAllMessagesForClient(username string) []Message {

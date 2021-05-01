@@ -17,6 +17,7 @@ const (
 	username
 	message
 	messages
+	file
 )
 
 
@@ -31,11 +32,13 @@ type request struct {
 	Action int
 	Username string
 	Message string
+	File File
 }
 
 type response struct {
 	Message string
-	Messages [] Message
+	Messages []Message
+	File File
 }
 
 type Message struct {
@@ -44,12 +47,17 @@ type Message struct {
 	Date time.Time
 }
 
+type File struct {
+	Bytes []byte
+	Length int
+	Filename string
+}
+
 func newClient() *client {
 	return &client {
 		id: generateId(10),
 	}
 }
-
 
 func (c *client) setup() {
 	conn, err := net.Dial("tcp", ":5000")
@@ -58,7 +66,7 @@ func (c *client) setup() {
 	}
 	defer conn.Close()
 
-	c.encode(conn, request {c.id, join, c.id, ""})
+	c.encode(conn, request {c.id, join, c.id, "", File{}})
 	port, err := strconv.Atoi(c.decode(conn).Message)
 
 	c.Port = port
@@ -83,8 +91,11 @@ func (c *client) listen() {
 }
 
 func (c *client) messageHandler(msg net.Conn) {
-	message := c.decode(msg)
-	fmt.Println("\n" + message.Message)
+	response := c.decode(msg)
+	fmt.Println("\n" + response.Message)
+	if response.File.Length != 0 {
+		c.createFile(response.File)
+	}
 }
 
 func (c *client) isValidUsername(u string) bool {
@@ -94,7 +105,7 @@ func (c *client) isValidUsername(u string) bool {
 	}
 	defer conn.Close()
 
-	c.encode(conn, request {c.id, username, u, ""})
+	c.encode(conn, request {c.id, username, u, "", File{}})
 	isValidUsername := c.decode(conn)
 	return isValidUsername.Message == "1"
 }
@@ -105,18 +116,73 @@ func (c *client) sendMessage(msg string) {
 		fmt.Println(err)
 	}
 	defer conn.Close()
-	c.encode(conn, request {c.id, message, c.Username, msg})
+	c.encode(conn, request {c.id, message, c.Username, msg, File{}})
 }
 
 func (c *client) getAllMessages() {
 	conn, err := net.Dial("tcp", ":5000")
 	if err != nil {
 		fmt.Println(err)
+		return
 	}
 	defer conn.Close()
-	c.encode(conn, request {c.id, messages, c.Username, ""})
+	c.encode(conn, request {c.id, messages, c.Username, "", File{}})
 	msgs := c.decode(conn).Messages
 	displayAllMessages(msgs)
+}
+
+func (c *client) sendFile(filename string) {
+	bs, count, err := readFile(filename)
+	if err != nil {
+		return
+	}
+	conn, err := net.Dial("tcp", ":5000")
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	defer conn.Close()
+
+	c.encode(conn, request {c.id, file, c.Username, "", File{Bytes: bs, Length: count, Filename: filename}})
+}
+
+func readFile(filename string) ([]byte, int, error) {
+	f, err := os.Open(filename)
+	if err != nil {
+		fmt.Println("No se encontro el archivo, intenta de nuevo")
+		return []byte{}, 0, err
+	}
+	defer f.Close()
+
+	stat, err := f.Stat()
+	if err != nil {
+		fmt.Println(err.Error())
+		return []byte{}, 0, err
+	}
+
+	total := stat.Size()
+	bs := make([]byte, total)
+	count, err := f.Read(bs)
+	if err != nil {
+		fmt.Println(err.Error())
+		return []byte{}, 0, err
+	}
+	return bs, count, err
+}
+
+func (c *client) createFile(file File) {
+	f, err := os.Create(file.Filename)
+	if err != nil {
+		fmt.Println("Te enviaron un archivo pero algo salio mal en el camino, lo sentimos")
+		return
+	}
+	defer f.Close()
+
+	_, err = f.Write(file.Bytes)
+	if err != nil {
+		fmt.Println("Algo salio mal", err.Error())
+		return
+	}
 }
 
 func (c *client) decode(conn net.Conn) response {
@@ -182,7 +248,9 @@ func main() {
 			msg := getStringFromUser()
 			client.sendMessage(msg)
 		} else if option == 2 {
-
+			fmt.Println("Ingresa el nombre del archivo: ")
+			filename := getStringFromUser()
+			client.sendFile(filename)
 		} else if option == 3 {
 			client.getAllMessages()
 		} else if option == 4 {
