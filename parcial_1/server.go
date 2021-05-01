@@ -16,6 +16,7 @@ const (
 	message
 	messages
 	file
+	endSession
 )
 
 type server struct {
@@ -109,6 +110,8 @@ func (s *server) clientHandler(conn net.Conn) {
 		s.sendAllMessagesToClient(req.Username, conn)
 	} else if req.Action == file {
 		s.file(req.Username, req.File, conn)
+	} else if req.Action == endSession {
+		s.endClient(req.Username)
 	}
 }
 
@@ -121,7 +124,7 @@ func (s *server) newClient(conn net.Conn, randid string) {
 }
 
 func (s *server) join(c client, conn net.Conn) {
-	log.Printf("New client has joined: %s", c.Username)
+	log.Println("New client has joined")
 	s.members[c.Username] = c
 	s.encode(conn, response {strconv.Itoa(c.Port), []Message{}, File{}})
 }
@@ -147,7 +150,7 @@ func (s *server) sendUsernameValidationToClient(c client, username string, conn 
 		s.members[username] = c 
 		delete(s.members, prevUsername)
 		log.Printf("Username %s available", username)
-		log.Printf("Current users in chat %s", s.getUsernames())
+		s.logCurrentUsers()
 	}
 }
 
@@ -201,9 +204,20 @@ func (s *server) backupMessages() {
 	delimiter := "|"
 	messages := []string{}
 	for _, m := range s.Messages {
-		messages = append(messages, m.Date.String() + delimiter + m.From.Username + delimiter + m.Text)
+		messages = append(messages, m.Date.Format("06-Jan-02") + delimiter + m.From.Username + delimiter + m.Text)
 	}
 	saveToFile(messages, "messages.txt")
+	log.Println("Messages saved to messages.txt")
+}
+
+func (s *server) endClient(username string) {
+	log.Println("User", username, "has disconnected from the server")
+	delete(s.members, username)
+	s.logCurrentUsers()
+}
+
+func (s *server) logCurrentUsers() {
+	log.Printf("Current users in chat %s", s.getUsernames())
 }
 
 func (s *server) saveMessage(msg Message) {

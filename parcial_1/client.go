@@ -18,6 +18,7 @@ const (
 	message
 	messages
 	file
+	endSession
 )
 
 
@@ -143,7 +144,28 @@ func (c *client) sendFile(filename string) {
 	}
 	defer conn.Close()
 
-	c.encode(conn, request {c.id, file, c.Username, "", File{Bytes: bs, Length: count, Filename: filename}})
+	c.encode(conn, request { 
+		c.id, 
+		file, 
+		c.Username, 
+		"", 
+		File { 
+			Bytes: bs, 
+			Length: count, 
+			Filename: filename,
+		},
+	})
+}
+
+func (c *client) endSession() {
+	conn, err := net.Dial("tcp", ":5000")
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	defer conn.Close()
+
+	c.encode(conn, request {c.id, endSession, c.Username, "", File{}})
 }
 
 func readFile(filename string) ([]byte, int, error) {
@@ -262,6 +284,8 @@ func main() {
 		} else if option == 3 {
 			client.getAllMessages()
 		} else if option == 4 {
+			client.endSession()
+			fmt.Println("Nos vemos " + client.Username + ", vuelve pronto")
 			exit = true
 		} else {
 			fmt.Println("Opcion no valida")
