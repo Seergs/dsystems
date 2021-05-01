@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"strconv"
 	"time"
 )
@@ -145,7 +146,8 @@ func (s *server) sendUsernameValidationToClient(c client, username string, conn 
 		c.Username = username
 		s.members[username] = c 
 		delete(s.members, prevUsername)
-		log.Printf("Username %s available. Current users in chat %s", username, s.getUsernames())
+		log.Printf("Username %s available", username)
+		log.Printf("Current users in chat %s", s.getUsernames())
 	}
 }
 
@@ -195,6 +197,15 @@ func (s *server) broadcastFile(from string, file File, conn net.Conn) {
 	}
 }
 
+func (s *server) backupMessages() {
+	delimiter := "|"
+	messages := []string{}
+	for _, m := range s.Messages {
+		messages = append(messages, m.Date.String() + delimiter + m.From.Username + delimiter + m.Text)
+	}
+	saveToFile(messages, "messages.txt")
+}
+
 func (s *server) saveMessage(msg Message) {
 	s.Messages = append(s.Messages, msg)
 }
@@ -206,9 +217,7 @@ func (s *server) sendAllMessagesToClient(username string, conn net.Conn) {
 func (s *server) getAllMessagesForClient(username string) []Message {
 	messages := [] Message{}
 	for _, m := range s.Messages {
-		if m.From.Username != username {
-			messages = append(messages, m)
-		}
+		messages = append(messages, m)
 	}
 	return messages
 }
@@ -286,6 +295,8 @@ func main() {
 		option := getIntFromUser()
 		if option == 1 {
 			s.displayAllMessages()
+		} else if option == 2 {
+			s.backupMessages()
 		} else if option == 3 {
 			killServer = true
 		}
@@ -322,4 +333,18 @@ func existsInSlice(s string, slice []string) bool {
         }
     }
     return false
+}
+
+func saveToFile(strings []string, filename string) {
+	file, err := os.Create(filename)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	defer file.Close()
+
+	for _,s := range(strings) {
+		file.WriteString(s + "\n")
+	}
 }

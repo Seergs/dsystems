@@ -92,7 +92,7 @@ func (c *client) listen() {
 
 func (c *client) messageHandler(msg net.Conn) {
 	response := c.decode(msg)
-	fmt.Println("\n" + response.Message)
+	fmt.Println("\n"+response.Message)
 	if response.File.Length != 0 {
 		c.createFile(response.File)
 	}
@@ -128,7 +128,7 @@ func (c *client) getAllMessages() {
 	defer conn.Close()
 	c.encode(conn, request {c.id, messages, c.Username, "", File{}})
 	msgs := c.decode(conn).Messages
-	displayAllMessages(msgs)
+	displayAllMessages(c.Username, msgs)
 }
 
 func (c *client) sendFile(filename string) {
@@ -201,25 +201,33 @@ func (c *client) encode(conn net.Conn, data interface {}) {
 	}
 }
 
-func displayAllMessages(msgs []Message) {
+func displayAllMessages(me string, msgs []Message) {
 	fmt.Printf("\n\n\n\n\n\n\n\n")
-	fmt.Printf("------------------------\n")
+	fmt.Printf("----------------------------------\n")
 	fmt.Println("-> Todos los mensajes")
-	fmt.Print("------------------------")
+	fmt.Print("----------------------------------")
 	for _, m := range msgs{
-		printMessage(m)
+		printMessage(m, m.From.Username == me)
 	}
-	fmt.Println("------------------------")
+	fmt.Println("----------------------------------")
 	fmt.Printf("\n\n\n\n\n\n")
 }
 
-func printMessage(m Message) {
-	fmt.Printf("\n\nDe ")
-	fmt.Println(m.From.Username)
-	fmt.Println(m.Text)
-	fmt.Printf("el ")
-	fmt.Print(m.Date.Format("06-Jan-02"))
-	fmt.Printf("\n\n")
+func printMessage(m Message, isMe bool) {
+	if isMe {
+		fmt.Println("\n\n\t\t\tYo")
+		fmt.Println("\t\t\t" + m.Text)
+		fmt.Printf("\t\t\tel ")
+		fmt.Print(m.Date.Format("06-Jan-02"))
+		fmt.Printf("\n\n")
+	} else {
+		fmt.Printf("\n\nDe ")
+		fmt.Println(m.From.Username)
+		fmt.Println(m.Text)
+		fmt.Printf("el ")
+		fmt.Print(m.Date.Format("06-Jan-02"))
+		fmt.Printf("\n\n")
+	}
 }
 
 func main() {
