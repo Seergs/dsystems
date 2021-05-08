@@ -32,6 +32,7 @@ func server() {
 	if err != nil {
 		log.Fatalln(err.Error())
 	}
+	log.Println("Server started on port 5000")
 	for {
 		c, err := ln.Accept()
 		if err != nil {
@@ -75,41 +76,45 @@ func (s *Server) SetStudentGrade(sg StudentGrade, reply *bool) error {
 }
 
 func (s *Server) GetStudentGPA(studentName string, reply *float64) error {
-	*reply = s.GetGPAByName(studentName)
+	log.Println("Getting student GAP")
+	gpa := s.getGPAByName(studentName)
+	log.Println("GPA:", gpa)
+	*reply = gpa
 	return nil
 }
 
 func (s *Server) GetStudentsGPA(a string, reply *float64) error {
+	log.Println("Getting students GPA")
 	var grades []float64
 	for student, _ := range s.studentGrades {
-		grades = append(grades, s.GetGPAByName(student))
+		grades = append(grades, s.getGPAByName(student))
 	}
-	*reply = calculateGPA(grades)
+	gpa := calculateGPA(grades)
+	log.Println("GPA:", gpa)
+	*reply = gpa
 	return nil
 }
 
 func (s *Server) GetSubjectGPA(subject string, reply *float64) error {
+	log.Println("Getting subject GPA")
 	subjectGrades := s.subjectGrades[subject]
 	var grades []float64
 	for _, grade := range subjectGrades {
 		grades = append(grades, grade)
 	}
-	*reply = calculateGPA(grades)
+	gpa := calculateGPA(grades)
+	log.Println("GPA:", gpa)
+	*reply = gpa
 	return nil
 }
 
-func (s *Server) GetGPAByName(studentName string) float64 {
+func (s *Server) getGPAByName(studentName string) float64 {
 	studentGrades := s.studentGrades[studentName]
 	var grades []float64
 	for _, grade := range studentGrades {
 		grades = append(grades, grade)
 	}
 	return calculateGPA(grades)	
-}
-
-func (s *Server) print() {
-	fmt.Println(s.studentGrades)
-	fmt.Println(s.subjectGrades)
 }
 
 func calculateGPA(grades []float64) float64 {
