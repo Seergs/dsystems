@@ -1,0 +1,19 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Agregar calificación</title>
+  </head>
+  <body>
+    <form action="/new" method="POST">
+      <label for="studentName">Nombre del alumno</label>
+      <input type="text" name="studentName" />
+      <label for="subject">Materia</label>
+      <input type="text" name="subject" />
+      <label for="grade">Calificación</label>
+      <input type="number" name="grade" step="0.01" />
+      <input type="submit" value="Guardar" />
+    </form>
+  </body>
+</html>
