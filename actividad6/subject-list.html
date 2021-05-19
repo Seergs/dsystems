@@ -1,0 +1,100 @@
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Selecciona una materia</title>
+  </head>
+
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      padding: 0;
+      margin: 0;
+      background-color: #f3f4f6;
+    }
+    nav {
+      padding: 1rem 0;
+      background-color: #111827;
+    }
+    ul {
+      max-width: 1000px;
+      margin: 0 auto;
+      list-style-type: none;
+      padding: 0;
+      display: flex;
+      justify-content: space-between;
+    }
+    a {
+      text-decoration: none;
+      color: #9ca3af;
+    }
+    a.active {
+      color: #e5e7eb;
+      border-bottom: 2px solid #e5e7eb;
+    }
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: #f3f4f6;
+    }
+    form {
+      max-width: 500px;
+      margin: 2rem auto;
+      display: flex;
+      flex-direction: column;
+      background-color: white;
+      padding: 1.5rem;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    label {
+      margin: 5px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+    select,
+    input {
+      height: 45px;
+      padding: 0 10px;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 0;
+      background-color: #f3f4f6;
+      box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      margin-bottom: 25px;
+    }
+    select:focus {
+      outline: none;
+      border: 2px solid #818cf8;
+    }
+    input[type="submit"] {
+      background-color: #1e3a8a;
+      color: #eff6ff;
+      font-size: 12px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+  </style>
+
+  <body>
+    <nav>
+      <ul>
+        <li>
+          <a href="/new"> Añadir calificación</a>
+        </li>
+        <li><a href="/gpa">Promedio general</a></li>
+        <li><a href="/studentlist">Promedio de un alumno</a></li>
+        <li>
+          <a href="/subjectlist" class="active">Promedio de una materia</a>
+        </li>
+      </ul>
+    </nav>
+    <form action="subjectgpa" method="POST">
+      <p>Selecciona una materia para calcular su promedio</p>
+      <select name="subject">
+        %s
+      </select>
+      <input type="submit" value="Calcular" />
+    </form>
+  </body>
+</html>

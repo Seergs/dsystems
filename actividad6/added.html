@@ -7,13 +7,35 @@
 
     <style>
       body {
-        max-width: 600px;
-        margin: 0 auto;
         font-family: Arial, Helvetica, sans-serif;
+        padding: 0;
+        margin: 0;
+        background-color: #f3f4f6;
+      }
+      nav {
+        padding: 1rem 0;
+        background-color: #111827;
+      }
+      ul {
+        max-width: 1000px;
+        margin: 0 auto;
+        list-style-type: none;
+        padding: 0;
+        display: flex;
+        justify-content: space-between;
+      }
+      a {
+        text-decoration: none;
+        color: #9ca3af;
+      }
+      a.active {
+        color: #e5e7eb;
+        border-bottom: 2px solid #e5e7eb;
       }
       .container {
+        max-width: 600px;
+        margin: 1rem auto;
         padding: 0 1rem;
-        margin-top: 1rem;
         background-color: rgb(235, 248, 255);
         border-top: 1px solid rgb(66, 153, 225);
         border-bottom: 1px solid rgb(66, 153, 225);
@@ -28,6 +50,16 @@
     </style>
   </head>
   <body>
+    <nav>
+      <ul>
+        <li>
+          <a href="/new" class="active"> Añadir calificación</a>
+        </li>
+        <li><a href="/gpa">Promedio general</a></li>
+        <li><a href="/studentlist">Promedio de un alumno</a></li>
+        <li><a href="/subjectlist">Promedio de una materia</a></li>
+      </ul>
+    </nav>
     <div class="container">
       <p class="text title">Éxito</p>
       <p class="text">La calificación ha sido agregada</p>

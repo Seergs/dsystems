@@ -4,16 +4,111 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Agregar calificación</title>
+
+    <style>
+      body {
+        padding: 0;
+        margin: 0;
+        font-family: Arial, Helvetica, sans-serif;
+        background-color: #f3f4f6;
+      }
+      nav {
+        padding: 1rem 0;
+        background-color: #111827;
+      }
+      ul {
+        max-width: 1000px;
+        margin: 0 auto;
+        list-style-type: none;
+        padding: 0;
+        display: flex;
+        justify-content: space-between;
+      }
+      a {
+        text-decoration: none;
+        color: #9ca3af;
+      }
+      a.active {
+        color: #e5e7eb;
+        border-bottom: 2px solid #e5e7eb;
+      }
+      form {
+        max-width: 500px;
+        margin: 2rem auto;
+        display: flex;
+        flex-direction: column;
+        background-color: white;
+        padding: 2rem;
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      }
+      label {
+        margin: 5px;
+        font-size: 12px;
+        font-weight: bold;
+      }
+      input {
+        height: 45px;
+        padding: 0 10px;
+        font-size: 16px;
+        border-radius: 5px;
+        border: 0;
+        background-color: #f3f4f6;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      }
+      input:focus {
+        outline: none;
+        border: 2px solid #818cf8;
+      }
+      input:not(input[type="submit"]) {
+        margin-bottom: 25px;
+      }
+      input::placeholder {
+        color: #9ca3af;
+      }
+      input[type="number"] {
+        width: 200px;
+      }
+      input[type="submit"] {
+        background-color: #1e3a8a;
+        color: #eff6ff;
+        font-size: 12px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+    </style>
   </head>
   <body>
-    <form action="/new" method="POST">
-      <label for="studentName">Nombre del alumno</label>
-      <input type="text" name="studentName" />
-      <label for="subject">Materia</label>
-      <input type="text" name="subject" />
-      <label for="grade">Calificación</label>
-      <input type="number" name="grade" step="0.01" />
-      <input type="submit" value="Guardar" />
+    <nav>
+      <ul>
+        <li>
+          <a href="/new" class="active"> Añadir calificación</a>
+        </li>
+        <li><a href="/gpa">Promedio general</a></li>
+        <li><a href="/studentlist">Promedio de un alumno</a></li>
+        <li><a href="/subjectlist">Promedio de una materia</a></li>
+      </ul>
+    </nav>
+    <form action="/newresult" method="POST">
+      <label for="studentName">NOMBRE DEL ALUMNO</label>
+      <input type="text" name="studentName" placeholder="Juan Perez" required />
+      <label for="subject">MATERIA</label>
+      <input
+        type="text"
+        name="subject"
+        placeholder="Estructuras de Datos II"
+        required
+      />
+      <label for="grade">CALIFICACIÓN</label>
+      <input
+        type="number"
+        name="grade"
+        step="0.01"
+        max="100"
+        placeholder="100"
+        required
+      />
+      <input type="submit" value="GUARDAR" />
     </form>
   </body>
 </html>
