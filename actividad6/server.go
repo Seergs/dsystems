@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	NEW = "/new"
-	NEW_RESULT = "/newresult"
+	NEW = "/"
+	NEW_RESULT = "/new"
 	GENERAL_GPA = "/gpa"
 	STUDENT_LIST = "/studentlist"
 	SUBJECT_LIST = "/subjectlist"
@@ -36,12 +36,10 @@ func NewAdmin() *AdminGrades {
 }
 
 func (g *AdminGrades) addNewGrade(res http.ResponseWriter, req *http.Request) {
-	log.Println("Request made to " + req.RequestURI)
 	fmt.Fprintf(res, render("new.html"))
 }
 
 func (g *AdminGrades) addNewGradeResult(res http.ResponseWriter, req *http.Request) {
-	log.Println("Request made to " + req.RequestURI)
 	if err := req.ParseForm(); err != nil {
 			log.Println(err.Error())
 			fmt.Fprintf(res, render("error.html"), "No se pudo procesar la solicitud, intenta de nuevo más tarde")
@@ -60,7 +58,6 @@ func (g *AdminGrades) addNewGradeResult(res http.ResponseWriter, req *http.Reque
 }
 
 func (g *AdminGrades) generalGpa(res http.ResponseWriter, req *http.Request) {
-	log.Println("Request made to " + req.RequestURI)
 	gpa := g.getStudentsGPA()
 	if gpa == 0 {
 		fmt.Fprintf(res, render("error.html"), "Aún no existen calificaciones de alumnos")
@@ -70,7 +67,6 @@ func (g *AdminGrades) generalGpa(res http.ResponseWriter, req *http.Request) {
 }
 
 func (g *AdminGrades) studentGpa(res http.ResponseWriter, req *http.Request) {
-	log.Println("Request made to " + req.RequestURI)
 	if err := req.ParseForm(); err != nil {
 		log.Println(err.Error())
 		fmt.Fprintf(res, render("error.html"), "No se pudo procesar la solicitud, intenta de nuevo más tarde")
@@ -85,7 +81,6 @@ func (g *AdminGrades) studentGpa(res http.ResponseWriter, req *http.Request) {
 }
 
 func (g *AdminGrades) subjectGpa(res http.ResponseWriter, req *http.Request){
-	log.Println("Request made to " + req.RequestURI)
 	if err := req.ParseForm(); err != nil {
 		log.Println(err.Error())
 		fmt.Fprintf(res, render("error.html"), "No se pudo procesar la solicitud, intenta de nuevo más tarde")
@@ -100,12 +95,10 @@ func (g *AdminGrades) subjectGpa(res http.ResponseWriter, req *http.Request){
 }
 
 func (g *AdminGrades) studentList(res http.ResponseWriter, req *http.Request) {
-	log.Println("Request made to " + req.RequestURI)
 	fmt.Fprintf(res, render("student-list.html"), g.studentsToHtml())
 }
 
 func (g *AdminGrades) subjectList(res http.ResponseWriter, req *http.Request) {
-	log.Println("Request made to " + req.RequestURI)
 	fmt.Fprintf(res, render("subject-list.html"), g.subjectsToHtml())
 }
 

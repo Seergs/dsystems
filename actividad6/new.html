@@ -17,7 +17,7 @@
         background-color: #111827;
       }
       ul {
-        max-width: 1000px;
+        max-width: 800px;
         margin: 0 auto;
         list-style-type: none;
         padding: 0;
@@ -82,14 +82,14 @@
     <nav>
       <ul>
         <li>
-          <a href="/new" class="active"> Añadir calificación</a>
+          <a href="/" class="active"> Añadir calificación</a>
         </li>
         <li><a href="/gpa">Promedio general</a></li>
         <li><a href="/studentlist">Promedio de un alumno</a></li>
         <li><a href="/subjectlist">Promedio de una materia</a></li>
       </ul>
     </nav>
-    <form action="/newresult" method="POST">
+    <form action="/new" method="POST">
       <label for="studentName">NOMBRE DEL ALUMNO</label>
       <input type="text" name="studentName" placeholder="Juan Perez" required />
       <label for="subject">MATERIA</label>
