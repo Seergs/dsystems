@@ -55,11 +55,18 @@ func (a *AdminGrades) grade(res http.ResponseWriter, req *http.Request) {
 			http.Error(res, err.Error(), http.StatusBadRequest)
 			return
 		}
-		a.updateStudentGrade(studentGrade)
-		res.WriteHeader(http.StatusOK)
+		studentGrade.StudentName = studentId
+		if !a.updateStudentGrade(studentGrade) {
+			http.Error(res, "User does not exists", http.StatusNotFound)
+		} else {
+			res.WriteHeader(http.StatusOK)
+		}
 	case "DELETE":
-		a.deleteStudent(studentId)
-		res.WriteHeader(http.StatusOK)
+		if !a.deleteStudent(studentId) {
+			http.Error(res, "User does not exists", http.StatusNotFound)
+		} else {
+			res.WriteHeader(http.StatusOK)
+		}
 	}
 }
 
@@ -104,14 +111,26 @@ func (a *AdminGrades) getStudentGrades(studentId string) ([]byte, error) {
 	return gradesJson, err
 }
 
-func (a *AdminGrades) updateStudentGrade(newStudentGrade StudentGrade) {
+func (a *AdminGrades) updateStudentGrade(newStudentGrade StudentGrade) bool {
 	log.Println("Updating student grade")
+	_, exists := a.studentGrades[newStudentGrade.StudentName]
+	if !exists {
+		log.Printf("User %s does not exists", newStudentGrade.StudentName)
+		return false
+	}
 	a.studentGrades[newStudentGrade.StudentName][newStudentGrade.Subject] = newStudentGrade.Grade
+	return true
 }
 
-func (a *AdminGrades) deleteStudent(studentId string) {
+func (a *AdminGrades) deleteStudent(studentId string) bool {
+	_, exists := a.studentGrades[studentId]
+	if !exists {
+		log.Printf("User %s does not exists", studentId)
+		return false
+	}
 	log.Println("Deleting student")
 	delete(a.studentGrades, studentId)
+	return true
 }
 
 func main() {
