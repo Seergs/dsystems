@@ -37,7 +37,7 @@ func main() {
 				if err != nil {
 					fmt.Println(err)
 				} else {
-					fmt.Println("\n\n\tCalificacion agregada con exito\n\n")
+					fmt.Print("\n\n\tCalificacion agregada con exito\n\n")
 				}
 			}
 		case 2:
