@@ -22,7 +22,6 @@ const (
 	end
 )
 
-//GetZodiacSign returns
 func GetZodiacSign(month int, day int) string {
 	switch month {
 	case int(jan):
@@ -89,7 +88,6 @@ func GetZodiacSign(month int, day int) string {
 	return "Algo salio mal"
 }
 
-//GetInputDataFromUserForZodiacSign returns
 func GetInputDataFromUserForZodiacSign() (int, int) {
 	var month int
 	var day int
@@ -114,13 +112,10 @@ func IsValidMonth(month int) bool {
 	return month > 0 && month <= 12
 }
 
-//IsValidDay returns
 func IsValidDay(day int) bool {
 	return day > 0 && day <= 31
 }
 
-
-//GetE retursn
 func GetE() float64 {
 	e := 0.0
 	
@@ -131,10 +126,24 @@ func GetE() float64 {
 	return e
 }
 
-//Factorial returns
 func Factorial(n int) int {
 	if n == 0 {
 		return 1
 	}
 	return n * Factorial(n-1)
+}
+
+
+func main() {
+	// Primer programa
+	fmt.Print("\n\nSigno zodiacal\n")
+	month, day := GetInputDataFromUserForZodiacSign()
+	zodiacSign := GetZodiacSign(month, day)
+	fmt.Print("Eres " + zodiacSign + "\n\n")
+
+
+	//Segundo programa
+	fmt.Print("\n\nCalculando numero de Euler, espere...\n")
+	e := GetE()
+	fmt.Printf("Euler = %.3f\n", e)
 }

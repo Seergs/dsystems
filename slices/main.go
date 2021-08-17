@@ -4,7 +4,6 @@ import (
 	"fmt"
 )
 
-// GetNumberOfElementsForSlices returns
 func GetNumberOfElementsForSlice() int {
 	var n int
 	fmt.Print("Numero de elementos: ")
@@ -13,7 +12,6 @@ func GetNumberOfElementsForSlice() int {
 	return n
 }
 
-// GetElementsForSlices returns
 func GetElementsForSlice(n int) []int {
 	s := make([]int, 0, n)
 	for i := 0; i < n; i++ {
@@ -26,7 +24,6 @@ func GetElementsForSlice(n int) []int {
 	return s
 }
 
-// SumOfElementsOfSlices returns
 func SumOfElementsOfSlice(s []int) int {
 	sum := 0
 	for _,v := range s {
@@ -34,4 +31,12 @@ func SumOfElementsOfSlice(s []int) int {
 	}
 	
 	return sum
+}
+
+func main() {
+	fmt.Print("\n\nSuma de elementos\n")
+	n := GetNumberOfElementsForSlice()
+	s := GetElementsForSlice(n)
+
+	fmt.Printf("Suma = %v\n\n", SumOfElementsOfSlice(s))
 }

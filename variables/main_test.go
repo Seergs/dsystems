@@ -2,6 +2,7 @@ package main
 
 import (
 	"testing"
+	"math"
 )
 
 func TestAreaCuadrado(t *testing.T)	 {
@@ -31,7 +32,7 @@ func TestAreaCirculo(t *testing.T) {
 
 	result := AreaCirculo(r)
 
-	if (IsAlmostEqual(expected, result, 1e-4)) {
+	if (isAlmostEqual(expected, result, 1e-4)) {
     	t.Fatalf("Got %v, expected %v", result, expected)
 	}
 
@@ -42,7 +43,11 @@ func TestFahrenheitToCelcius(t *testing.T) {
 
 	result := FahrenheitToCelcius(f)
 
-	if (IsAlmostEqual(18.3333, result, 1e-4)) {
+	if (isAlmostEqual(18.3333, result, 1e-4)) {
 		t.Fatalf("%f is not 18.3333", result)
 	}
+}
+
+func isAlmostEqual(expected float64, actual float64, _error float64) bool {
+	return math.Abs(actual - expected) > _error
 }

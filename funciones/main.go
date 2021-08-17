@@ -1,6 +1,9 @@
 package main
 
-//Burbuja orders
+import (
+	"fmt"
+)
+
 func Burbuja(s [] int64) {
 	n := len(s)
 	
@@ -13,7 +16,6 @@ func Burbuja(s [] int64) {
 	}
 }
 
-//Fibonacci returns
 func Fibonacci(n int64) int64 {
 	if n <= 1 {
 		return n
@@ -22,7 +24,6 @@ func Fibonacci(n int64) int64 {
 	return Fibonacci(n-1) + Fibonacci(n - 2)
 }
 
-//Greater returns
 func Greater(args ...int) int {
 	greatest := args[0]
 
@@ -35,7 +36,6 @@ func Greater(args ...int) int {
 	return greatest
 }
 
-//GenerarImpar returns
 func GenerarImpar() func() uint  {
 	i := uint(1)
 
@@ -46,7 +46,18 @@ func GenerarImpar() func() uint  {
 	}
 }
 
-//Intercambia swaps
 func Intercambia(a, b *int) {
 	*a, *b = *b, *a
+}
+
+func main() {
+	a, b := 5, 3
+	fmt.Print("Antes del cambio\n")
+	fmt.Printf("a = %d, b = %d", a, b)
+
+
+	Intercambia(&a, &b)
+
+	fmt.Print("\nDespues del cambio\n")
+	fmt.Printf("a = %d, b = %d", a, b)
 }

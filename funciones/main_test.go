@@ -10,7 +10,7 @@ func TestBurbuja(t *testing.T) {
 
 	Burbuja(s)
 
-	if !IsEqualSlice(s, sorted_slice) {
+	if !isEqualSlice(s, sorted_slice) {
 		t.Fatalf("%v is not %v", s, sorted_slice)
 	}
 	
@@ -64,4 +64,18 @@ func TestIntercambia(t *testing.T) {
 	if (a != 6 || b != 5) {
 		t.Fatal("Swap did not work")
 	}
+}
+
+func isEqualSlice(a, b [] int64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i, v := range a {
+		if v != b[i]{
+			return false
+		}
+	}
+
+	return true
 }
